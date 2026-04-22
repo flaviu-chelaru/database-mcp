@@ -24,8 +24,10 @@ jobs:
         include:
           - platform: linux/amd64
             runner: ubuntu-latest
+            cache_tag: cache-linux-amd64
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
+            cache_tag: cache-linux-arm64
 
     steps:
       - name: Checkout
@@ -49,8 +51,8 @@ jobs:
           target: base
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.platform }}
-          cache-to: type=gha,scope=${{ matrix.platform }},mode=max
+          cache-from: type=registry,ref=${{ env.IMAGE }}:${{ matrix.cache_tag }}
+          cache-to: type=registry,ref=${{ env.IMAGE }}:${{ matrix.cache_tag }},mode=max
 
       - name: Export digest
         run: |
