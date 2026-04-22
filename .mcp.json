@@ -6,6 +6,18 @@
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "database": {
+            "command": "docker",
+            "type": "stdio",
+            "args": [
+                "run",
+                "--rm",
+                "-i",
+                "-e",
+                "DB_CONNECTIONS={\"mydb\":\"mysql://user:pass@host.docker.internal:3306/mydb\"}",
+                "ghcr.io/flaviu-chelaru/database-mcp"
+            ]
         }
     }
 }

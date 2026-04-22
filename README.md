@@ -27,17 +27,27 @@ An MCP (Model Context Protocol) server that gives AI coding assistants read-only
 
 ## Quick Start
 
+### Using Docker
+
+```bash
+docker run --rm \
+  -e DB_CONNECTIONS='{"mydb":"mysql://user:pass@host.docker.internal:3306/mydb"}' \
+  ghcr.io/flaviu-chelaru/database-mcp
+```
+
+### From source
+
 ```bash
 git clone git@github.com:flaviu-chelaru/database-mcp.git
 cd database-mcp
 composer run setup
 ```
 
-The `setup` script installs dependencies, copies `.env.example`, generates an app key, runs migrations, and builds frontend assets.
+The `setup` script installs dependencies, copies `.env.example`, and generates an app key.
 
 ## Configuration
 
-Add your database connections to `.env` using the `DB_CONNECTIONS` variable. It accepts a JSON object mapping connection names to DSN strings:
+Set the `DB_CONNECTIONS` environment variable with a JSON object mapping connection names to DSN strings:
 
 ```env
 DB_CONNECTIONS='{"my_app":"mysql://user:pass@localhost:3306/my_app","analytics":"pgsql://user:pass@localhost:5432/analytics"}'
@@ -48,11 +58,14 @@ Supported DSN schemes: `mysql`, `mariadb`, `pgsql`, `sqlite`, `sqlsrv`.
 ## Running the MCP Server
 
 ```bash
-# Start the MCP inspector
+# Start the stdio MCP server
+php artisan mcp:start database
+
+# Start the inspector web UI (requires Node.js)
 composer mcp
 ```
 
-This runs `php artisan mcp:inspector database` with authentication disabled for local use.
+## Docker
 
 ### Connecting from Claude Code
 
@@ -62,24 +75,78 @@ Add the server to your `.mcp.json`:
 {
   "mcpServers": {
     "database": {
-      "command": "php",
-      "args": ["artisan", "mcp:inspector", "database"],
-      "cwd": "/path/to/database-mcp"
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-e", "DB_CONNECTIONS={\"mydb\":\"mysql://user:pass@host.docker.internal:3306/mydb\"}",
+        "ghcr.io/flaviu-chelaru/database-mcp"
+      ]
     }
   }
 }
 ```
 
+### Connecting to a database on the host machine
+
+Use `host.docker.internal` to reach databases running on your host:
+
+```bash
+docker run --rm -i \
+  -e DB_CONNECTIONS='{"app":"mysql://root:secret@host.docker.internal:3306/app_db"}' \
+  ghcr.io/flaviu-chelaru/database-mcp
+```
+
+### Connecting to a database in another Docker container
+
+Use a shared Docker network:
+
+```bash
+# Create a network (or use an existing one)
+docker network create mynet
+
+# Run the MCP server on the same network
+docker run --rm -i --network mynet \
+  -e DB_CONNECTIONS='{"app":"mysql://root:secret@mysql-container:3306/app_db"}' \
+  ghcr.io/flaviu-chelaru/database-mcp
+```
+
+### Multiple databases at once
+
+```bash
+docker run --rm -i \
+  -e DB_CONNECTIONS='{"main":"mysql://root:pass@host.docker.internal:3306/main","analytics":"pgsql://user:pass@host.docker.internal:5432/analytics","legacy":"sqlsrv://sa:pass@host.docker.internal:1433/legacy"}' \
+  ghcr.io/flaviu-chelaru/database-mcp
+```
+
+### Running the MCP Inspector (development)
+
+The inspector provides a web UI for testing MCP tools and resources:
+
+```bash
+docker compose up inspector
+```
+
+Open `http://localhost:6274` in your browser.
+
+### Overriding the command
+
+The entrypoint is `php artisan`, so you can run any artisan command:
+
+```bash
+# List available artisan commands
+docker run --rm ghcr.io/flaviu-chelaru/database-mcp list
+
+# Run tinker
+docker run --rm -it ghcr.io/flaviu-chelaru/database-mcp tinker
+```
+
 ## Development
 
 ```bash
-# Start dev server with live reload, queue worker, log viewer, and Vite
-composer run dev
-
 # Run tests
 composer run test
 
-# Format code
+# Format code (PSR-12)
 vendor/bin/pint
 ```
 
@@ -87,7 +154,6 @@ vendor/bin/pint
 
 - PHP 8.4+
 - Composer
-- Node.js & npm
 - One or more supported database servers
 
 ## License

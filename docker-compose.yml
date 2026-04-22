@@ -1,6 +1,6 @@
 services:
   mcp:
-    image: mcp-base
+    image: ghcr.io/flaviu-chelaru/database-mcp
     build:
       context: .
       target: base
@@ -8,7 +8,7 @@ services:
       - DB_CONNECTIONS=${DB_CONNECTIONS:-{}}
 
   inspector:
-    image: mcp-inspector
+    image: ghcr.io/flaviu-chelaru/database-mcp:dev
     build:
       context: .
       target: dev
