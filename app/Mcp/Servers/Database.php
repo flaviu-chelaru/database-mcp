@@ -2,6 +2,9 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Resources\SchemaOverview;
+use App\Mcp\Tools\ListConnections;
+use App\Mcp\Tools\ListDatabases;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
@@ -13,12 +16,12 @@ use Laravel\Mcp\Server\Attributes\Version;
 class Database extends Server
 {
     protected array $tools = [
-        \App\Mcp\Tools\ListConnections::class,
-        \App\Mcp\Tools\ListDatabases::class,
+        ListConnections::class,
+        ListDatabases::class,
     ];
 
     protected array $resources = [
-        \App\Mcp\Resources\SchemaOverview::class,
+        SchemaOverview::class,
     ];
 
     protected array $prompts = [
