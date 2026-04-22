@@ -18,6 +18,8 @@ RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --opti
 
 COPY . .
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 RUN if [ ! -f .env ]; then cp .env.example .env; fi \
     && rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
     && php artisan package:discover --ansi \

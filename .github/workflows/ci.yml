@@ -25,11 +25,11 @@ jobs:
       - name: Validate composer.json
         run: composer validate --strict
 
-      - name: Audit dependencies for vulnerabilities
-        run: composer audit
-
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
+
+      - name: Audit dependencies for vulnerabilities
+        run: composer audit
 
       - name: Prepare application
         run: |
