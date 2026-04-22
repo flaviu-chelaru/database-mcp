@@ -1,58 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Database MCP
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+An MCP (Model Context Protocol) server that gives AI coding assistants read-only access to your database schemas. Connect multiple databases and let tools like Claude Code, Cursor, or GitHub Copilot understand your table structures, columns, indexes, foreign keys, and views -- without any risk of data modification.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Multi-database support** -- connect to MySQL, MariaDB, PostgreSQL, SQLite, and SQL Server simultaneously
+- **Read-only by design** -- all operations are strictly read-only; no data modification is possible
+- **Full schema introspection** -- tables, columns, indexes, foreign keys, and views with metadata (engine, collation, size, comments)
+- **DSN-based configuration** -- define connections as simple DSN strings in a single environment variable
+- **Graceful error handling** -- connection failures are reported without crashing the server
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## MCP Interface
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Tools
 
-## Learning Laravel
+| Tool | Description |
+|------|-------------|
+| `ListConnections` | Returns all configured database connections and their drivers |
+| `ListDatabases` | Lists available databases for each configured connection |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Resources
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| URI | Description |
+|-----|-------------|
+| `schema://db/{connection}/{database}` | Full schema overview for a database -- tables, columns, indexes, foreign keys, and views |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Quick Start
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone git@github.com:flaviu-chelaru/database-mcp.git
+cd database-mcp
+composer run setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+The `setup` script installs dependencies, copies `.env.example`, generates an app key, runs migrations, and builds frontend assets.
 
-## Contributing
+## Configuration
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Add your database connections to `.env` using the `DB_CONNECTIONS` variable. It accepts a JSON object mapping connection names to DSN strings:
 
-## Code of Conduct
+```env
+DB_CONNECTIONS='{"my_app":"mysql://user:pass@localhost:3306/my_app","analytics":"pgsql://user:pass@localhost:5432/analytics"}'
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Supported DSN schemes: `mysql`, `mariadb`, `pgsql`, `sqlite`, `sqlsrv`.
 
-## Security Vulnerabilities
+## Running the MCP Server
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+# Start the MCP inspector
+composer mcp
+```
+
+This runs `php artisan mcp:inspector database` with authentication disabled for local use.
+
+### Connecting from Claude Code
+
+Add the server to your `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "database": {
+      "command": "php",
+      "args": ["artisan", "mcp:inspector", "database"],
+      "cwd": "/path/to/database-mcp"
+    }
+  }
+}
+```
+
+## Development
+
+```bash
+# Start dev server with live reload, queue worker, log viewer, and Vite
+composer run dev
+
+# Run tests
+composer run test
+
+# Format code
+vendor/bin/pint
+```
+
+## Requirements
+
+- PHP 8.4+
+- Composer
+- Node.js & npm
+- One or more supported database servers
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

@@ -1,3 +1,75 @@
+# Database MCP
+
+A Laravel MCP server that gives AI coding assistants read-only access to database schemas. Supports MySQL, MariaDB, PostgreSQL, SQLite, and SQL Server simultaneously via DSN strings in a single environment variable.
+
+## Project Architecture
+
+```
+app/Mcp/
+├── Servers/Database.php          # Root MCP server — registers tools and resources
+├── Tools/
+│   ├── ListConnections.php       # Returns configured connections and their drivers
+│   └── ListDatabases.php         # Lists databases per connection
+└── Resources/
+    └── SchemaOverview.php        # Full schema via URI template schema://db/{connection}/{database}
+```
+
+- **routes/ai.php** — MCP server registration (`Mcp::local('database', Database::class)`)
+- **config/database.php** — Parses `DB_CONNECTIONS` JSON env var into Laravel connections and exposes `mcp_connections` config key
+
+## Design Principles
+
+1. **Read-only only.** Every tool and resource must use the `#[IsReadOnly]` attribute. This server must never write, update, or delete data.
+2. **Connection allowlist.** Only connections defined in `DB_CONNECTIONS` are exposed to MCP. Always validate against `config('database.mcp_connections')` before operating on a connection.
+3. **Graceful errors.** Connection failures must be caught and reported in the response, never thrown.
+
+## MCP Patterns
+
+### Adding a Tool
+
+1. Create `app/Mcp/Tools/YourTool.php` extending `Laravel\Mcp\Server\Tool`
+2. Add `#[Description('...')]` and `#[IsReadOnly]` attributes
+3. Inject `DatabaseManager` via constructor property promotion
+4. Implement `handle(Request $request): Response` returning `Response::json()`
+5. Iterate `config('database.mcp_connections')` for multi-connection support
+6. Register in `Database::$tools`
+
+### Adding a Resource
+
+1. Create `app/Mcp/Resources/YourResource.php` extending `Resource`, implementing `HasUriTemplate`
+2. Define `uriTemplate(): UriTemplate` (e.g. `schema://db/{connection}/{database}`)
+3. Validate connection against `config('database.mcp_connections')` — return `Response::error()` if not allowed
+4. Return `Response::structured()` with data
+5. Register in `Database::$resources`
+
+## DB_CONNECTIONS Format
+
+JSON object mapping connection names to DSN strings:
+
+```env
+DB_CONNECTIONS='{"app":"mysql://user:pass@localhost:3306/app_db","analytics":"pgsql://user:pass@localhost:5432/analytics"}'
+```
+
+Supported schemes: `mysql`, `mariadb`, `pgsql`, `sqlite`, `sqlsrv`. No code changes needed to add a new connection — just edit `.env`.
+
+## Commands
+
+```bash
+composer run setup    # Install deps, generate key, migrate, build assets
+composer run dev      # Artisan serve + queue + pail + vite concurrently
+composer run mcp      # Run MCP inspector (auth disabled for local use)
+composer run test     # Clear config cache and run PHPUnit
+vendor/bin/pint --dirty --format agent  # Format modified PHP files
+```
+
+## Testing
+
+- PHPUnit v12. Create tests with `php artisan make:test --phpunit {name}`.
+- Run minimal tests with `--filter` after changes, then offer full suite.
+- Test happy paths, error paths (bad connection names, connection failures), and edge cases.
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

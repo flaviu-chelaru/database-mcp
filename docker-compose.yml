@@ -1,0 +1,20 @@
+services:
+  mcp:
+    image: mcp-base
+    build:
+      context: .
+      target: base
+    environment:
+      - DB_CONNECTIONS=${DB_CONNECTIONS:-{}}
+
+  inspector:
+    image: mcp-inspector
+    build:
+      context: .
+      target: dev
+    ports:
+      - "${INSPECTOR_PORT:-6274}:6274"
+    environment:
+      - DB_CONNECTIONS=${DB_CONNECTIONS:-{}}
+      - DANGEROUSLY_OMIT_AUTH=true
+    command: ["mcp:inspector", "database", "--host=0.0.0.0", "--port=6274"]
